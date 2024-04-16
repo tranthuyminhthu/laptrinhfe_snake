@@ -5,26 +5,24 @@ const GRID_SNAKE = 2;
 const GRID_OBSTACLE = 3;
 const GRID_POISON = 4;
 
-const initArraySize = 16;
+const initArraySize = 14;
 let initArray = [
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 ];
-const size = 35;
+const size = 38;
 let snake = [
     {
         x: Math.floor(initArraySize / 2) - 1,
@@ -42,6 +40,7 @@ let speed = 200;
 let obstacles = [];
 let poison = { x: 0, y: 0 };
 let foods = [];
+let foodIntervalId;
 
 
 const newGame = document.querySelector(".ended__button")
@@ -52,7 +51,6 @@ window.onload = () => {
     if (level >= 3) {
         initObstacles();
     }
-    // initFood();
     initFoods();
     render();
     if (level >= 4) {
@@ -62,12 +60,12 @@ window.onload = () => {
     levelSelect.addEventListener('change', function() {
         if (!isGameStarted) {
             level = parseInt(this.value);
+            console.log(level)
             if (level >= 3) {
                 initObstacles();
             }else{
                 obstacles = [];
             }
-            // initFood();
             initFoods();
             render();
         }
@@ -75,11 +73,18 @@ window.onload = () => {
 
     document.addEventListener('keydown', (event) => {
         if (isGameOver) return; // Don't do anything if game is over
-
-        if (event.code === 'ArrowLeft' && snakeDirection !== 'RIGHT') newDirection = 'LEFT';
-        else if (event.code === 'ArrowUp' && snakeDirection !== 'DOWN') newDirection = 'UP';
-        else if (event.code === 'ArrowRight' && snakeDirection !== 'LEFT') newDirection = 'RIGHT';
-        else if (event.code === 'ArrowDown' && snakeDirection !== 'UP') newDirection = 'DOWN';
+        if (level !== 5 && level !== 6) {
+            if (event.code === 'ArrowLeft' && snakeDirection !== 'RIGHT') newDirection = 'LEFT';
+            else if (event.code === 'ArrowUp' && snakeDirection !== 'DOWN') newDirection = 'UP';
+            else if (event.code === 'ArrowRight' && snakeDirection !== 'LEFT') newDirection = 'RIGHT';
+            else if (event.code === 'ArrowDown' && snakeDirection !== 'UP') newDirection = 'DOWN';
+        } else {
+            // Reverse the controls for level 5
+            if (event.code === 'ArrowRight' && snakeDirection !== 'LEFT') newDirection = 'LEFT';
+            else if (event.code === 'ArrowDown' && snakeDirection !== 'UP') newDirection = 'UP';
+            else if (event.code === 'ArrowLeft' && snakeDirection !== 'RIGHT') newDirection = 'RIGHT';
+            else if (event.code === 'ArrowUp' && snakeDirection !== 'DOWN') newDirection = 'DOWN';
+        }
 
         // If a new direction was successfully determined and the game is not yet started:
         if (newDirection && !isGameStarted) {
@@ -99,13 +104,17 @@ const gameLoop = () => {
     if (!isGameOver && updateSnakePosition()) {
         scoreElement.innerHTML = score;
         render();
-        if (level === 4) {
-            updateWalls();
-        }
         setTimeout(gameLoop, speed);
         levelSelect.disabled = true
+        if (!foodIntervalId && (level === 4 || level === 6)) {
+            foodIntervalId = setInterval(initFoods, 2000);
+        }
 
     } else if (isGameOver) {
+        if (foodIntervalId) {
+            clearInterval(foodIntervalId);
+            foodIntervalId = null;
+        }
         // If the game is over, reset isGameStarted so the game can be restarted
         isGameStarted = false;
         levelSelect.disabled = false
@@ -137,7 +146,7 @@ const render = () => {
 
     const board = document.getElementById('board');
     // Ensure the border size is factored in correctly once, outside the loop.
-    const borderSize = 10; // Example border size, update as needed.
+    const borderSize = 0; // Example border size, update as needed.
     board.style.height = `${initArray.length * size + borderSize}px`;
     board.style.width = `${initArray[0].length * size + borderSize}px`;
 
@@ -148,29 +157,30 @@ const render = () => {
         row.forEach((cell, indexCol) => {
             const cellElement = document.createElement('div');
             let color = '';
-            if (cell === GRID_FOOD) {
-                color = 'red'
-            } else if (cell === GRID_SNAKE) {
-                color = '#82e30f'
-            } else if (cell === GRID_OBSTACLE) {
+            if (cell === GRID_OBSTACLE) {
                 color = '#141e05'
             } else if (cell === GRID_POISON) {
                 color = '#2a218a'
             } else if (indexRow % 2 === indexCol % 2) {
-                color = '#e0c182'
+                color = '#aad751'
+            } else {
+                color = '#a2d149'
             }
-        cellElement.style.cssText = `
+            if (cell === GRID_FOOD) {
+                cellElement.classList.add('food');
+            } else if (cell === GRID_SNAKE) {
+                cellElement.classList.add('snake');
+            }
+            cellElement.style.cssText = `
         position: absolute;  
-        width: ${size}px;  
-        height: ${size}px;  
+        width: ${size + 1}px;  
+        height: ${size + 1}px;  
         top: ${indexRow * size}px;  
         left: ${indexCol * size}px;  
         background-color: ${color};
         `
         board.appendChild(cellElement);
         });
-
-
     });
 };
 
@@ -222,19 +232,22 @@ const updateSnakePosition = () => {
         }
     }
 
+    let ateFood = false;
     for (let i = 0; i < foods.length; i++) {
         if (head.x === foods[i].x && head.y === foods[i].y) {
-            snake.unshift(head); // Add new head
             score++;
-            // foods.splice(i, 1); // Remove the eaten food
-            // initFoods(); // Initialize new foods
-            console.log(snake)
+            foods.splice(i, 1); // Remove the eaten food
+            createFood(); // Initialize new foods
+            ateFood = true;
             break;
-        }else {
-            // Move the snake
-            snake.unshift(head); // Add new head
-            snake.pop(); // Remove tail
         }
+    }
+
+    // Move the snake
+    snake.unshift(head);
+    if (!ateFood) {
+        // If the snake didn't eat food, remove the tail
+        snake.pop();
     }
 
     return true;
@@ -321,14 +334,6 @@ const initPoison = () => {
     initArray[x][y] = GRID_POISON;
 };
 
-const updateWalls = () => {
-    // Move the walls up and down
-    obstacles.forEach(part => {
-        part.y += 1;
-        if (part.y >= initArraySize) part.y = 0;
-    });
-};
-
 const initFoods = () => {
     foods = [];
     for (let i = 0; i < 5; i++) { // Create 5 foods
@@ -342,4 +347,15 @@ const initFoods = () => {
         initArray[x][y] = GRID_FOOD;
     }
 
+};
+
+const createFood = () => {
+    let x, y;
+    do {
+        x = Math.floor(Math.random() * initArraySize);
+        y = Math.floor(Math.random() * initArraySize);
+    } while (initArray[x][y] !== GRID_EMPTY);  // Ensure an empty position
+
+    foods.push({ x, y });
+    initArray[x][y] = GRID_FOOD;
 };

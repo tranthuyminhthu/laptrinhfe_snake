@@ -1,5 +1,5 @@
 // variable
-$primary-color: #be5c4d;
+$primary-color: #578a34;
 // mixin
 @mixin location($x, $y) {
   top: $y;
@@ -104,10 +104,18 @@ i {
 }
 
 #board {
-  border: 5px green solid;
   position: relative;
 }
 
 .cell {
   position: absolute;
+}
+
+.food {
+  background-image: url('assets/apple.png')
+}
+
+.snake {
+  background-image: url('assets/body1.png');
+  background-size: cover;
 }

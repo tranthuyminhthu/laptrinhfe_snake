@@ -5,7 +5,7 @@
 }
 
 body {
-  background-color: #be5c4d;
+  background-color: #578a34;
 }
 
 i {
@@ -94,12 +94,20 @@ i {
 }
 
 #board {
-  border: 5px green solid;
   position: relative;
 }
 
 .cell {
   position: absolute;
+}
+
+.food {
+  background-image: url("assets/apple.png");
+}
+
+.snake {
+  background-image: url("assets/body1.png");
+  background-size: cover;
 }
 
 /*# sourceMappingURL=style.css.map */
